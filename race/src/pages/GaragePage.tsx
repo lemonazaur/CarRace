@@ -5,6 +5,7 @@ import "../styles/GaragePage.css"
 const GaragePage: React.FC = () => {
     const [cars, setCars] = useState<Car[]>([]);
     const [newCarName, setNewCarName] = useState<string>();
+    const [selectedCar, setSelectedCar] = useState<Car>();
 
     useEffect(() => {
         fetchCars();
@@ -62,6 +63,26 @@ const GaragePage: React.FC = () => {
         }
     };
 
+    const changeCar = async () =>{
+        try {
+            const response = await fetch(`http://localhost:3000/garage/${selectedCar?.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: newCarName, color: "#FFFFFF" }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to change car');
+            }
+            // Fetch updated cars after adding the new car
+            fetchCars();
+        } catch (error) {
+            console.error('Error change car:', error);
+        }
+    }
+
     return (
         <div>
             <hr></hr>
@@ -79,12 +100,8 @@ const GaragePage: React.FC = () => {
                         onChange={(e) => setNewCarName(e.target.value)}
                         placeholder="Enter car name"
                     />
+                    <button onClick={() => changeCar()}>UPDATE</button>
                     <button onClick={addCar}>CREATE</button>
-                </div>
-
-                <div className="updateCar">
-                    <input/>
-                    <button>UPDATE</button>
                 </div>
 
                 <button>GENERATE CARS</button>
@@ -95,6 +112,7 @@ const GaragePage: React.FC = () => {
                     <div key={car.id}>
                         <p>{car.name}  {car.color}</p>
                         <button onClick={() => removeCar(car.id)}>Delete</button>
+                        <button onClick={() => setSelectedCar(car)}>Select</button>
                     </div>
                 ))}
             </div>
