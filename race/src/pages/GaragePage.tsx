@@ -1,37 +1,65 @@
-// GaragePage.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Car } from '../types'; // Import Car type definition
 import "../styles/GaragePage.css"
 
 const GaragePage: React.FC = () => {
-    // State for managing cars in the garage
     const [cars, setCars] = useState<Car[]>([]);
+    const [newCarName, setNewCarName] = useState<string>();
 
     useEffect(() => {
-        let newCars :Car[] = [{id:1, name: 'honda', color: "blue" }];
-        setCars(newCars);
+        fetchCars();
     }, []);
 
-    // Function to add a new car to the garage
-    const addCar = () => {
-        // Generate a random car object (replace with your logic)
-        const newCar: Car = {
-            id: Math.floor(Math.random() * 1000),
-            name: `Car ${cars.length + 1}`,
-            color: '#000000', // Default color
-        };
+    // Function to fetch cars from the backend
+    const fetchCars = async () => {
+        try {
+            const response = await fetch('http://localhost:3000/garage');
+            if (!response.ok) {
+                throw new Error('Failed to fetch cars');
+            }
+            const data = await response.json();
+            setCars(data);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+    };
 
-        // Add the new car to the garage
-        setCars([...cars, newCar]);
+    // Function to add a new car to the garage
+    const addCar = async () => {
+        try {
+            const response = await fetch('http://localhost:3000/garage', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: newCarName, color: "#FFFFFF" }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to add car');
+            }
+            // Fetch updated cars after adding the new car
+            fetchCars();
+        } catch (error) {
+            console.error('Error adding car:', error);
+        }
     };
 
     // Function to remove a car from the garage
-    const removeCar = (id: number) => {
-        // Filter out the car with the specified id
-        const updatedCars = cars.filter(car => car.id !== id);
-        // Update the cars state
-        setCars(updatedCars);
+    const removeCar = async (id: number) => {
+        try {
+            const response = await fetch(`http://localhost:3000/garage/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to delete car with id ${id}`);
+            }
+            // Fetch updated cars after adding the new car
+            fetchCars();
+        } catch (error) {
+            console.error('Error deleting car:', error);
+        }
     };
 
     return (
@@ -45,26 +73,31 @@ const GaragePage: React.FC = () => {
                 </div>
 
                 <div className="createNewCar">
-                    <input/>
+                    <input
+                        type="text"
+                        value={newCarName}
+                        onChange={(e) => setNewCarName(e.target.value)}
+                        placeholder="Enter car name"
+                    />
                     <button onClick={addCar}>CREATE</button>
                 </div>
+
                 <div className="updateCar">
                     <input/>
                     <button>UPDATE</button>
                 </div>
+
                 <button>GENERATE CARS</button>
             </div>
             <hr></hr>
             <div>
                 {cars.map(car => (
                     <div key={car.id}>
-                        <span>{car.name}</span>
-                        <span style={{ backgroundColor: car.color, width: '20px', height: '20px', display: 'inline-block' }}></span>
-                        <button onClick={() => removeCar(car.id)}>Remove</button>
+                        <p>{car.name}  {car.color}</p>
+                        <button onClick={() => removeCar(car.id)}>Delete</button>
                     </div>
                 ))}
             </div>
-
         </div>
     );
 };
