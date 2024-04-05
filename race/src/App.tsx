@@ -9,9 +9,8 @@ const App: React.FC = () => {
     return (
         <div className="App">
             <BrowserRouter>
-                <nav >
-
-                    <div className="link">
+                <nav>
+                    <div className="">
                         <Link className="link" to="/">TO GARAGE</Link>
                         <Link className="link" to="/WinnersPage">TO WINNERS</Link>
                     </div>

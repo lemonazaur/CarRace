@@ -11,3 +11,9 @@ export interface Winner {
     wins: number;
     bestTime: number;
 }
+
+export interface CarCardProps {
+    car: Car;
+    removeCar: (id: number) => void;
+    setSelectedCar: (car: Car) => void;
+}
