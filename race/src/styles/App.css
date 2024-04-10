@@ -1,0 +1,34 @@
+.App {
+  text-align: center;
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+button{
+  color: cyan;
+  padding: 5px;
+  border-radius: 14%;
+  background-color: transparent;
+  border: cyan 2px solid;
+  font-size: calc(10px + 2vmin);
+}
+
+.link {
+  border: red 5px solid;
+  border-radius: 14%;
+  padding: 5px;
+  margin: 20px;
+  text-decoration: none;
+  color: red;
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  margin: 20px;
+}
