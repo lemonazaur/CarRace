@@ -260,8 +260,7 @@ const GaragePage: React.FC = () => {
 
     //Function to generate 100 cars for tests;
     const generateCars = async () => {
-        for (let i = 0; i < 10; i++) {
-            //todo: change to 100 defore deployment
+        for (let i = 0; i < 100; i++) {
             try {
                 const response = await fetch('http://localhost:3000/garage', {
                     method: 'POST',
