@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Car } from '../types';
-import "../styles/GaragePage.css";
+import { Car, Winner } from '../types';
 import CarCard from "../CarCard";
 
 const GaragePage: React.FC = () => {
-    const [page, setPage] = useState(1)
+    //current page
+    const [page, setPage] = useState<number>(1)
 
+    //AI generated db (for test generation)
     const carBrands = ["Toyota", "Honda", "Ford", "Chevrolet", "BMW", "Mercedes-Benz", "Audi", "Volkswagen", "Nissan", "Hyundai", "Tesla", "Subaru", "Kia", "Lexus", "Porsche", "Jaguar", "Land Rover", "Jeep", "Mazda", "Fiat"];
     const carModels = [
         "Corolla", "Camry", "RAV4", "Highlander", "Tacoma", "Sienna", "Prius", "4Runner", "Tundra", "Avalon",
@@ -29,28 +30,26 @@ const GaragePage: React.FC = () => {
         "Mazda3", "Mazda6", "CX-5", "CX-9", "MX-5 Miata", "CX-3", "MX-30", "RX-8", "RX-7", "CX-30",
         "500", "500X", "500L", "124 Spider", "500e", "500 Abarth", "Tipo", "Punto", "Freemont", "Talento"
     ];
+
     const unitsPerPage = 7;
     let lastCarIndex = unitsPerPage * page;
     let firstCarIndex = lastCarIndex - unitsPerPage;
 
     const [cars, setCars] = useState<Car[]>([]);
-    const [pageData, setPageData] = useState<Car[]>(cars.splice(firstCarIndex, lastCarIndex));
     const [newCarName, setNewCarName] = useState<string>("");
     const [selectedCar, setSelectedCar] = useState<Car | null>();
     const [newColor, setNewColor] = useState<string>("#FFFFFF");
+    const [winner, setWinner] = useState<[number, number]>([0, 0]);
 
 
-
-
+    //1 || count
+    let totalPages = Math.max(1 , Math.ceil(cars.length / unitsPerPage)) ;
 
     useEffect(() => {
         fetchCars();
-    }, []);
-
-    useEffect(() => {
         lastCarIndex = unitsPerPage * page;
         firstCarIndex = lastCarIndex - unitsPerPage;
-        setPageData(cars.slice(firstCarIndex, lastCarIndex));
+        totalPages = Math.ceil(cars.length / unitsPerPage);
     }, [cars, page]);
 
     // Function to fetch cars from the backend (runs on port 3000)
@@ -62,13 +61,19 @@ const GaragePage: React.FC = () => {
             }
             const data = await response.json();
             setCars(data);
+            if(page > totalPages){
+                prevPage();
+            }
         } catch (error) {
             console.error('Error fetching data:', error);
         }
     };
 
-    // Function to add a new car to the garage
-    const addCar = async () => {
+
+    //CRUD operations on the cars
+
+    //Function to add a new car to the garage
+    const createCar = async () => {
         try {
             if(newCarName && newCarName.length < 16){
                 const response = await fetch('http://localhost:3000/garage', {
@@ -84,12 +89,12 @@ const GaragePage: React.FC = () => {
                 }
                 // Fetch updated cars after adding the new car
                 fetchCars();
-                console.log(`Added a car {name: ${newCarName}, color: ${newColor}}`)
+                console.log(`Created a car {name: ${newCarName}, color: ${newColor}}`)
             }else{
                 throw new Error('Empty name or more than 16 characters');
             }
         } catch (error) {
-            console.error('Error adding car:', error);
+            console.error('Error creating car:', error);
         }
     };
 
@@ -106,6 +111,9 @@ const GaragePage: React.FC = () => {
                 if (!response.ok) {
                     throw new Error(`Bad response with ${id}`);
                 }
+
+                deleteWinner(id);
+
                 fetchCars();
             }
         } catch (error) {
@@ -114,7 +122,7 @@ const GaragePage: React.FC = () => {
     };
 
     //Function to change selected car with current inputs
-    const changeCar = async () =>{
+    const updateCar = async () =>{
         try {
             if(selectedCar){
                 if(newCarName && newCarName.length < 16){
@@ -130,22 +138,116 @@ const GaragePage: React.FC = () => {
                         throw new Error('Bad response');
                     }
                     fetchCars();
+                    console.log(`Updated car with {id: ${selectedCar.id} name: ${newCarName} color: ${newColor}`)
                 }else{
-                    throw new Error('Empty name or more than 16 characters ');
+                    throw new Error('Empty name or more than 16 characters');
                 }
             }else{
                 throw new Error('No car selected ');
             }
 
         } catch (error) {
-            console.error('Error change car:', error);
+            console.error('Error updating car:', error);
         }
     }
+
+
+    //CRUD on Winners
+
+    //Function to update a new winner
+    const updateWinner = async () => {
+        const [id, newTime] = winner;
+        try {
+            if (id > 0) {
+                const existingWinner: Winner | {} = await getWinner(id);
+                if (existingWinner && 'id' in existingWinner) {
+                    // If winner exists, update their record
+                    const response = await fetch(`http://localhost:3000/winners/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ wins: existingWinner.wins + 1, time: Math.min(newTime, existingWinner.time) }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to update winner');
+                    }
+                    console.log(`Updated a winner -> id: ${id}, wins: ${existingWinner.wins + 1}, time: ${Math.min(newTime, existingWinner.time)}`);
+                } else {
+                    // If winner does not exist, create a new one
+                    createWinner();
+                }
+            } else {
+                throw new Error('Invalid ID');
+            }
+        } catch (error) {
+            console.error('Error updating winner:', error);
+        }
+    };
+
+    //Function to create a new winner
+    const createWinner = async () => {
+        try {
+            const [id, time] = winner;
+            if (id > 0 && time > 0) {
+                const response = await fetch('http://localhost:3000/winners', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id, wins: 1, time }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create winner');
+                }
+                console.log(`Added a winner -> id: ${id}, wins: 1, time: ${time}`);
+            } else {
+                throw new Error('Invalid id or time');
+            }
+        } catch (error) {
+            console.error('Error adding winner:', error);
+        }
+    };
+
+    //Function to get a winner from ID : number
+    const getWinner = async (id: number): Promise<Winner | {}> => {
+        try {
+            const response = await fetch(`http://localhost:3000/winners/${id}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch winner');
+            }
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error getting winner:', error);
+            return {};
+        }
+    };
+
+    //Function to delete a winner by ID : number
+    const deleteWinner = async (id: number)=> {
+        const response = await fetch(`http://localhost:3000/winners/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            console.error(`Failed to find car with id ${id}`);
+        }
+    };
+
+
+
+
+
+    //Tools for randomization
 
     //Returns two combined random hex numbers. Example "d6"
     const hex = () => {
         return Math.floor(Math.random() * 256).toString(16).padStart(2, '0');
     }
+
     //Returns a random name : Brand + Model
     const name = () => {
         let index = Math.floor(Math.random() * 20);
@@ -153,9 +255,13 @@ const GaragePage: React.FC = () => {
         return carBrands[index] + " " + carModels[index*10 + Math.floor(Math.random() * 10)];
     }
 
+
+
+
     //Function to generate 100 cars for tests;
     const generateCars = async () => {
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 10; i++) {
+            //todo: change to 100 defore deployment
             try {
                 const response = await fetch('http://localhost:3000/garage', {
                     method: 'POST',
@@ -182,24 +288,16 @@ const GaragePage: React.FC = () => {
     }
 
 
-
-
-
-
-
-
-
-    const totalPages = Math.ceil(cars.length / unitsPerPage);
-
-    const nextPage = () => setPage((prevPage) => Math.min(prevPage + 1, totalPages));
-    const prevPage = () => setPage((prevPage) => Math.max(prevPage - 1, 1));
+    //Pagination controls
+    const nextPage = () => setPage( page == totalPages? page : page+1);
+    const prevPage = () => setPage(page==1? 1 : page-1);
     const firstPage = () => setPage(1);
     const lastPage = () => setPage(totalPages);
 
     return (
         <div>
             <hr></hr>
-            <h1>Garage</h1>
+            <h1>Your garage has {cars.length} cars</h1>
             <div className="controls">
                 <div>
                     <button onClick={raceAll}>RACE</button>
@@ -219,33 +317,33 @@ const GaragePage: React.FC = () => {
                         onChange={(e) => setNewColor(e.target.value)}
                     />
 
-                    <button onClick={changeCar}>UPDATE</button>
-                    <button onClick={addCar}>CREATE</button>
+                    <button onClick={updateCar}>UPDATE</button>
+                    <button onClick={createCar}>CREATE</button>
                 </div>
 
                 <button onClick={generateCars}>GENERATE CARS</button>
             </div>
             <hr></hr>
 
+            <div className="pagination">
+                <button onClick={firstPage}>First</button>
+                <button onClick={prevPage}>Previous</button>
+                <span style={ {margin: "3vw"}}>Page {page} of {totalPages}</span>
+                <button onClick={nextPage}>Next</button>
+                <button onClick={lastPage}>Last</button>
+            </div>
+
+            <hr/>
 
             <div>
-                {pageData.map(car => (
+                {cars.slice(firstCarIndex, lastCarIndex).map(car => (
                     <CarCard
                         key={car.id}
                         car={car}
                         removeCar={removeCar}
                         setSelectedCar={setSelectedCar}
                     />
-                    //todo: make it so it says which car is selected
                 ))}
-            </div>
-
-            <div className="pagination">
-                <button onClick={firstPage}>First</button>
-                <button onClick={prevPage}>Previous</button>
-                <span>Page {page} of {totalPages}</span>
-                <button onClick={nextPage}>Next</button>
-                <button onClick={lastPage}>Last</button>
             </div>
         </div>
     );

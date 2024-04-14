@@ -6,14 +6,20 @@ export interface Car {
 
 export interface Winner {
     id: number;
-    carId: number;
-    name: string;
     wins: number;
-    bestTime: number;
+    time: number;
 }
 
 export interface CarCardProps {
     car: Car;
     removeCar: (id: number) => void;
     setSelectedCar: (car: Car) => void;
+}
+
+export interface winnerInfo {
+    id: number;
+    wins: number;
+    time: number;
+    name: string;
+    color: string;
 }

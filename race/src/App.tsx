@@ -10,7 +10,7 @@ const App: React.FC = () => {
         <div className="App">
             <BrowserRouter>
                 <nav>
-                    <div className="">
+                    <div>
                         <Link className="link" to="/">TO GARAGE</Link>
                         <Link className="link" to="/WinnersPage">TO WINNERS</Link>
                     </div>

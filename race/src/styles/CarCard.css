@@ -5,11 +5,11 @@
     margin: 10px 0;
 }
 
-.info{
+.toolSet{
     display: flex;
     align-items: center;
     flex-direction: column;
-    margin: 10px;
+    margin: 1px;
 }
 p{
     margin: 5px 0;

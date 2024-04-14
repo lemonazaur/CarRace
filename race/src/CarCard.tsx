@@ -13,16 +13,17 @@ const CarCard: React.FC<CarCardProps> = ({ car, removeCar, setSelectedCar }) => 
     return (
         <div>
             <div className="line">
-                <div key={car.id} className="info">
-                    <button>START</button>
-                    <button>END</button>
+                <div key={car.id} className="line">
+                    <div className="toolSet">
+                        <button>START</button>
+                        <button>STOP</button>
+                    </div>
+                    <div className="toolSet">
+                        <button onClick={() => removeCar(car.id)}>Delete</button>
+                        <button onClick={() => setSelectedCar(car)}>Select</button>
+                    </div>
                 </div>
 
-
-                <div key={car.id} className="info">
-                    <button onClick={() => removeCar(car.id)}>Delete</button>
-                    <button onClick={() => setSelectedCar(car)}>Select</button>
-                </div>
                 <FaCarSide className="car" style={{ width: '100px', height: '70px', color: car.color }} />
                 <p>{car.name}</p>
             </div>

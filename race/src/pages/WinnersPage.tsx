@@ -1,22 +1,17 @@
 import React, {useEffect, useState} from 'react';
-import { Car } from '../types';
-import "../styles/WinnersPage.css"
+import { winnerInfo } from '../types';
+import "../styles/WinnersPage.css";
 import { FaCarSide } from "react-icons/fa6";
-
-type winnerInfo = {
-    id: number;
-    wins: number;
-    time: number;
-    name: string;
-    color: string;
-};
 
 const WinnersPage: React.FC = () => {
     const [winnerInfo, setWinnerInfo] = useState<winnerInfo[]>([]);
-    const [page, setPage] = useState(1)
-    const unitsPerPage = 7;
-    const lastCarIndex = unitsPerPage * page;
-    const firstCarIndex = lastCarIndex - unitsPerPage;
+    const [page, setPage] = useState<number>(1)
+    const unitsPerPage = 10;
+    let lastCarIndex = unitsPerPage * page;
+    let  firstCarIndex = lastCarIndex - unitsPerPage;
+
+    //1 || count
+    let totalPages = Math.max(1 , Math.ceil(winnerInfo.length / unitsPerPage)) ;
 
     useEffect(() => {
         fetchWinners();
@@ -61,10 +56,28 @@ const WinnersPage: React.FC = () => {
     }
 
 
+
+
+
+    //Pagination controls
+    const nextPage = () => setPage( page == totalPages? page : page+1);
+    const prevPage = () => setPage(page==1? 1 : page-1);
+    const firstPage = () => setPage(1);
+    const lastPage = () => setPage(totalPages);
+
     return (
         <div>
             <hr/>
             <h1>Winners</h1>
+
+            <div className="pagination">
+                <button onClick={firstPage}>First</button>
+                <button onClick={prevPage}>Previous</button>
+                <span style={ {margin: "3vw"}}>Page {page} of {totalPages}</span>
+                <button onClick={nextPage}>Next</button>
+                <button onClick={lastPage}>Last</button>
+            </div>
+
             <hr/>
             <div className="info">
                 <p>№</p>
@@ -74,7 +87,10 @@ const WinnersPage: React.FC = () => {
                 <p>BEST TIME (s)</p>
             </div>
             <hr/>
-            {winnerInfo.map((winner) => (
+
+            { winnerInfo.map((winner) => (
+                //This is to check that we have all info, and only then display on screen
+                winner.name &&
                 <div className="info" key={winner.id}>
                     <p>{winner.id}</p>
                     <FaCarSide className="car" style={{ width: '100px', height: '70px', color: winner.color}} />
