@@ -1,23 +1,18 @@
-.line{
+.line {
     display: flex;
     flex-direction: row;
     align-items: center;
     margin: 10px 0;
+    position: relative; /* Make the parent relative */
 }
 
-.toolSet{
+.toolSet {
     display: flex;
     align-items: center;
     flex-direction: column;
     margin: 1px;
 }
-p{
-    margin: 5px 0;
-}
 
-.car {
-    width: 100px;
-    height: 100px;
-    color: cyan;
-    transition: transform 2s;
+p {
+    margin: 5px 0;
 }

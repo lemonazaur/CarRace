@@ -14,6 +14,8 @@ export interface CarCardProps {
     car: Car;
     removeCar: (id: number) => void;
     setSelectedCar: (car: Car) => void;
+    startEngine: (id:number) => void;
+    stopEngine: (id:number) => void;
 }
 
 export interface winnerInfo {

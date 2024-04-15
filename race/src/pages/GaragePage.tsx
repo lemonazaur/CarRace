@@ -50,7 +50,15 @@ const GaragePage: React.FC = () => {
         lastCarIndex = unitsPerPage * page;
         firstCarIndex = lastCarIndex - unitsPerPage;
         totalPages = Math.ceil(cars.length / unitsPerPage);
-    }, [cars, page]);
+    }, [ page]);
+
+    useEffect(() => {
+        if (winner[0] !== 0 && winner[1] !== 0) { // Check if winner state is updated
+            console.log('winner ', winner[0], winner[1]); // Logging winner after state update
+            updateWinner();
+            alert(`We have a winner! Car ID: ${winner[0]} with time: ${winner[1]} seconds`);
+        }
+    }, [winner]);
 
     // Function to fetch cars from the backend (runs on port 3000)
     const fetchCars = async () => {
@@ -238,7 +246,116 @@ const GaragePage: React.FC = () => {
     };
 
 
+    //Engine tools
 
+    //Function to start the engine of the car with ID :number
+    const startEngine = async (id: number) => {
+        const response = await fetch(`http://localhost:3000/engine?id=${id}&status=started`, {
+            method: 'PATCH'
+        });
+        if (!response.ok) {
+            console.error(`Error starting engine: ${response.status}`);
+        }
+        const data = await response.json();
+        const timeInSeconds = 500 / data.velocity;
+        const formattedTime = timeInSeconds.toFixed(1); // Round to 1 decimal place
+        console.log('Engine started:', data, formattedTime);
+        return parseFloat(formattedTime); // Parse the string to a float
+    }
+
+
+    //Function to stop the engine of the car with ID: nuber
+    const stopEngine = async (id: number) => {
+        const response = await fetch(`http://localhost:3000/engine?id=${id}&status=stopped`, {
+            method: 'PATCH'
+        });
+        if (!response.ok) {
+            console.error(`HTTP error! Status: ${response.status}`);
+        }
+        console.log(`Engine of ${id} stopped`);
+    }
+
+    //Function to put the car to drive mode
+    const driveCar = async (id: number) => {
+        const response = await fetch(`http://localhost:3000/engine?id=${id}&status=drive`, {
+            method: 'PATCH'
+        });
+        if (!response.ok) {
+            throw new Error(`Engine failure during race for car ${id}`);
+        }
+    };
+
+
+
+
+    //Raceing tools
+
+    //Function to race all cars
+    const raceAll = async () => {
+        let racePromises = cars.map(car =>
+            startEngine(car.id).then(time => ({
+                id: car.id,
+                time: time
+            })).catch(() => ({
+                id: car.id,
+                time: Infinity //if start fails, means the car wont drive => has no time
+            }))
+        );
+        let raceResults = await Promise.all(racePromises);
+        // Start animations
+        raceResults.forEach(result => {
+            if (result.time !== Infinity) { // Only animate cars that started successfully
+                startAnimation(result.id, result.time);
+            }
+        });
+
+        let finalResults = await Promise.all(raceResults.map(async result => {
+            if (result.time !== Infinity) {//if engine started
+                try {
+                    await driveCar(result.id);
+                    return result; // If successful, return the result
+                } catch (error) {
+                    stopAnimation(result.id); // Stop animation if the engine fails during driving
+                    return { ...result, time: Infinity }; // Indicate failure
+                }
+            }
+            return result; //Dont do anything
+        }));
+
+        let successfulRaces = finalResults.filter(result => result.time !== Infinity);
+        if (successfulRaces.length > 0) {
+            let win = successfulRaces.reduce((acc, curr) => acc.time < curr.time ? acc : curr);
+            setWinner([win.id, win.time]); // Update winner state
+        } else {
+            alert("No car finished the race.");
+        }
+    };
+
+    //Function to reset all cars
+    const resetRace = () => {
+        cars.forEach(car => {
+            stopAnimation(car.id); // Stop animation for each car
+        });
+    };
+
+
+    // Animation functions
+    const startAnimation = (id:number, time:number) => {
+        const carElement = document.querySelector(`#car-${id}`) as HTMLElement;
+        if (carElement) {
+            carElement.style.transition = `transform ${time}s linear`;
+
+            carElement.style.transform = 'translateX(calc(100vw - 280px))'; // Assuming 100% is the end of the race track
+        }
+    };
+
+    const stopAnimation = (id: number) => {
+        const carElement = document.querySelector(`#car-${id}`) as HTMLElement;
+        if (carElement) {
+            carElement.style.transition = 'none';
+            carElement.style.transform = 'translateX(0%)'; // Reset position or stop at current
+        }
+    };
 
 
     //Tools for randomization
@@ -254,9 +371,6 @@ const GaragePage: React.FC = () => {
         console.log(index)
         return carBrands[index] + " " + carModels[index*10 + Math.floor(Math.random() * 10)];
     }
-
-
-
 
     //Function to generate 100 cars for tests;
     const generateCars = async () => {
@@ -281,11 +395,6 @@ const GaragePage: React.FC = () => {
         fetchCars()
     }
 
-    //Function to race all cars
-    const raceAll = () =>{
-        //todo: make every car race (dont forget about the engine fail)
-    }
-
 
     //Pagination controls
     const nextPage = () => setPage( page == totalPages? page : page+1);
@@ -300,7 +409,7 @@ const GaragePage: React.FC = () => {
             <div className="controls">
                 <div>
                     <button onClick={raceAll}>RACE</button>
-                    <button>RESET</button>
+                    <button onClick={resetRace}>RESET</button>
                 </div>
 
                 <div className="createNewCar">
@@ -341,8 +450,11 @@ const GaragePage: React.FC = () => {
                         car={car}
                         removeCar={removeCar}
                         setSelectedCar={setSelectedCar}
+                        startEngine={startEngine}
+                        stopEngine={stopEngine}
                     />
                 ))}
+                <hr/>
             </div>
         </div>
     );
