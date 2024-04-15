@@ -1,11 +1,11 @@
 .info {
-    display: grid;
-    grid-template-columns: 1fr 2fr 3fr 1fr 1fr; /* Adjust the fraction values as needed */
-    gap: 10px; /* This adds a gap between the columns */
-    align-items: center; /* This vertically aligns all the items in the middle */
-    margin: 10px;
+  display: grid;
+  grid-template-columns: 1fr 2fr 3fr 1fr 1fr; /* Adjust the fraction values as needed */
+  gap: 10px; /* This adds a gap between the columns */
+  align-items: center; /* This vertically aligns all the items in the middle */
+  margin: 10px;
 }
 
 .car {
-    justify-self: center; /* Center the car icon in its grid cell */
+  justify-self: center; /* Center the car icon in its grid cell */
 }
